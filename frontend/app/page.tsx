@@ -1,12 +1,24 @@
 import Link from "next/link";
 
-import { getSimulation } from "@/lib/api";
+import { getLatestSimulation, runSimulation } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const simulation = await getSimulation().catch(() => ({ winner_probabilities: {} }));
-  const top = Object.entries(simulation.winner_probabilities)
+  const latest = await getLatestSimulation().catch(() => ({
+    created_at: null,
+    n_simulations: 0,
+    winner_probabilities: {},
+  }));
+
+  const fallback =
+    Object.keys(latest.winner_probabilities).length === 0
+      ? await runSimulation(250).catch(() => ({ winner_probabilities: {} }))
+      : { winner_probabilities: latest.winner_probabilities };
+
+  const winnerProbabilities: Record<string, number> = fallback.winner_probabilities;
+
+  const top = Object.entries(winnerProbabilities)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
@@ -31,7 +43,7 @@ export default async function HomePage() {
               ))
             ) : (
               <tr>
-                <td colSpan={2}>Backend nicht erreichbar - pruefe Container und API-Verbindung.</td>
+                <td colSpan={2}>Noch keine Simulation verfuegbar. Oeffne Simulation, um Daten zu erzeugen.</td>
               </tr>
             )}
           </tbody>

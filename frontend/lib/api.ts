@@ -40,7 +40,7 @@ export function getSimulation(): Promise<{ winner_probabilities: Record<string, 
   return fetch(buildApiUrl("/api/simulation/run"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ n: 1000 }),
+    body: JSON.stringify({ n: 250 }),
   }).then((res) => {
     if (!res.ok) {
       throw new Error(`Simulation request failed: ${res.status}`);
