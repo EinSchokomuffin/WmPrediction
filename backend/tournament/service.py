@@ -518,6 +518,12 @@ class TournamentService:
         }
 
     def get_model_status(self) -> dict[str, object]:
+        if self.ml_model is None:
+            loaded = TrainedMatchModel.load(settings.model_artifact_path)
+            if loaded is not None:
+                self.ml_model = loaded
+                self.predictor.set_ml_model(loaded)
+
         latest = self._load_last_training_run()
         self.last_model_train_result = latest
         return {
