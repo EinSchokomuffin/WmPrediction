@@ -17,7 +17,7 @@ cd backend
 python -m venv .venv
 .venv\\Scripts\\activate
 pip install -e .[dev]
-uvicorn api.main:app --reload
+uvicorn api.main:app --reload --port 6239
 ```
 
 ### Frontend
@@ -25,11 +25,11 @@ uvicorn api.main:app --reload
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev -- --port 6238
 ```
 
-Backend: http://localhost:8000
-Frontend: http://localhost:3000
+Backend: http://localhost:6239
+Frontend: http://localhost:6238
 
 ## API Endpunkte
 
