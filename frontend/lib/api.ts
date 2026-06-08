@@ -8,10 +8,16 @@ import type {
   SimulationResponse,
 } from "@/types/tournament";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://wm.wentzek-home.de";
+const SERVER_API_BASE = process.env.INTERNAL_API_URL ?? "http://backend:8000";
+const CLIENT_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+function buildApiUrl(path: string): string {
+  const base = typeof window === "undefined" ? SERVER_API_BASE : CLIENT_API_BASE;
+  return base ? `${base}${path}` : path;
+}
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const response = await fetch(buildApiUrl(path), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`);
   }
@@ -31,7 +37,7 @@ export function getBracket(): Promise<{ round_of_32: [string, string | null][] }
 }
 
 export function getSimulation(): Promise<{ winner_probabilities: Record<string, number> }> {
-  return fetch(`${API_BASE}/api/simulation/run`, {
+  return fetch(buildApiUrl("/api/simulation/run"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ n: 1000 }),
@@ -56,7 +62,7 @@ export function getModelPerformance(): Promise<ModelPerformanceResponse> {
 }
 
 export async function runSimulation(n: number): Promise<SimulationResponse> {
-  const response = await fetch(`${API_BASE}/api/simulation/run`, {
+  const response = await fetch(buildApiUrl("/api/simulation/run"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ n }),
@@ -68,8 +74,8 @@ export async function runSimulation(n: number): Promise<SimulationResponse> {
 }
 
 export async function refreshData(): Promise<RefreshDataResponse> {
-  const response = await fetch(`${API_BASE}/api/data/refresh`, {
-    method: "GET",
+  const response = await fetch(buildApiUrl("/api/data/refresh"), {
+    method: "POST",
     cache: "no-store",
   });
   if (!response.ok) {

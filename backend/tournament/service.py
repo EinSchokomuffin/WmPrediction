@@ -17,6 +17,20 @@ from tournament.group_phase import calculate_standings, generate_group_schedule
 from tournament.third_place import rank_all_third_place_teams, rank_third_place_teams
 
 GROUP_NAMES = [chr(c) for c in range(ord("A"), ord("L") + 1)]
+DEFAULT_GROUP_TEAMS: dict[str, list[str]] = {
+    "A": ["Mexico", "United States", "Canada", "Costa Rica"],
+    "B": ["Brazil", "Argentina", "Uruguay", "Chile"],
+    "C": ["England", "France", "Germany", "Netherlands"],
+    "D": ["Spain", "Portugal", "Italy", "Croatia"],
+    "E": ["Belgium", "Switzerland", "Denmark", "Austria"],
+    "F": ["Japan", "South Korea", "Australia", "Iran"],
+    "G": ["Morocco", "Senegal", "Nigeria", "Egypt"],
+    "H": ["Colombia", "Ecuador", "Peru", "Paraguay"],
+    "I": ["Serbia", "Poland", "Ukraine", "Czech Republic"],
+    "J": ["Turkey", "Sweden", "Norway", "Scotland"],
+    "K": ["Cameroon", "Algeria", "Tunisia", "Ghana"],
+    "L": ["Qatar", "Saudi Arabia", "United Arab Emirates", "Iraq"],
+}
 
 
 @dataclass(frozen=True)
@@ -216,9 +230,8 @@ class TournamentService:
         rank = 1
         for group in GROUP_NAMES:
             teams[group] = []
-            for slot in range(1, 5):
-                name = f"Team {group}{slot}"
-                teams[group].append(TeamState(name=name, elo=1650.0 - rank * 5, fifa_rank=rank))
+            for country in DEFAULT_GROUP_TEAMS[group]:
+                teams[group].append(TeamState(name=country, elo=1650.0 - rank * 5, fifa_rank=rank))
                 rank += 1
         return teams
 

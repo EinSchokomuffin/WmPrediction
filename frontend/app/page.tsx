@@ -31,7 +31,7 @@ export default async function HomePage() {
               ))
             ) : (
               <tr>
-                <td colSpan={2}>Backend nicht erreichbar - starte FastAPI auf Port 8000.</td>
+                <td colSpan={2}>Backend nicht erreichbar - pruefe Container und API-Verbindung.</td>
               </tr>
             )}
           </tbody>
