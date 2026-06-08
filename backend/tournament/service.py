@@ -622,6 +622,9 @@ class TournamentService:
         return self.get_bracket()
 
     def predict_match(self, home: str, away: str) -> dict[str, float]:
+        if home == away:
+            raise ValueError("Teams must be different")
+
         team_lookup = {team.name: team for teams in self.groups.values() for team in teams}
         home_team = team_lookup[home]
         away_team = team_lookup[away]

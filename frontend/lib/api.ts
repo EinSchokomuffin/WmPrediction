@@ -4,6 +4,7 @@ import type {
   GroupMap,
   GroupStandings,
   LatestSimulationResponse,
+  MatchPredictionResult,
   ModelPerformanceResponse,
   RefreshDataResponse,
   SimulationResponse,
@@ -65,6 +66,16 @@ export function getFullBracket(): Promise<FullBracketResponse> {
 
 export function getModelPerformance(): Promise<ModelPerformanceResponse> {
   return request<ModelPerformanceResponse>("/api/predictions/performance");
+}
+
+export async function predictMatch(home: string, away: string): Promise<MatchPredictionResult> {
+  const query = new URLSearchParams({ home, away }).toString();
+  const response = await fetch(`/api/predictions/match?${query}`, { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.detail ?? `Prediction failed: ${response.status}`);
+  }
+  return payload as MatchPredictionResult;
 }
 
 export async function runSimulation(n: number): Promise<SimulationResponse> {

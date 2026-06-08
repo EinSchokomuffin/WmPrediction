@@ -10,6 +10,8 @@ router = APIRouter(prefix="/api/predictions", tags=["predictions"])
 def get_prediction(home: str, away: str) -> MatchPredictionResponse:
     try:
         return MatchPredictionResponse(**service.predict_match(home, away))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Team not found") from exc
 

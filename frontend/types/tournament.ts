@@ -68,6 +68,15 @@ export interface RefreshDataResponse {
   refreshed_at: string;
 }
 
+export interface MatchPredictionResult {
+  home_win_prob: number;
+  draw_prob: number;
+  away_win_prob: number;
+  expected_home_goals: number;
+  expected_away_goals: number;
+  confidence: number;
+}
+
 export interface GroupMatch {
   match_number: number;
   stage: string;
