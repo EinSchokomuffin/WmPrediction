@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from api.routes.bracket import router as bracket_router
 from api.routes.data import router as data_router
 from api.routes.groups import router as groups_router
+from api.routes.model import router as model_router
 from api.routes.predictions import router as predictions_router
 from api.routes.simulation import router as simulation_router
 from api.routes.standings import router as standings_router
@@ -22,12 +24,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["wm.wentzek-home.de", "localhost", "127.0.0.1", "testserver"],
+)
+
 app.include_router(groups_router)
 app.include_router(bracket_router)
 app.include_router(predictions_router)
 app.include_router(simulation_router)
 app.include_router(standings_router)
 app.include_router(data_router)
+app.include_router(model_router)
 
 
 @app.get("/")

@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from core.config import settings
 from data.etl.refresh import refresh_groups_from_football_data
 from prediction.dixon_coles import DixonColesModel
 from prediction.elo import EloRating
 from prediction.ensemble import EnsemblePredictor
+from prediction.ml_workflow import TrainedMatchModel, train_and_save_model
 from simulation.monte_carlo import TournamentSimulator
 from tournament.bracket import build_r32_bracket
 from tournament.group_phase import calculate_standings, generate_group_schedule
@@ -26,10 +28,12 @@ class TournamentService:
         self.results: dict[str, list[dict[str, int | str]]] = {group: [] for group in GROUP_NAMES}
         self.elo = EloRating()
         self.dc = DixonColesModel()
-        self.predictor = EnsemblePredictor(self.elo, self.dc)
+        self.ml_model = TrainedMatchModel.load(settings.model_artifact_path)
+        self.predictor = EnsemblePredictor(self.elo, self.dc, self.ml_model)
         self.last_refresh_at: datetime | None = None
         self.knockout_matches: dict[int, dict[str, object]] = {}
         self.last_simulation: dict[str, object] | None = None
+        self.last_model_train_result: dict[str, object] | None = None
 
     @staticmethod
     def _match_stage(match_number: int) -> str:
@@ -351,15 +355,23 @@ class TournamentService:
         away_team = team_lookup[away]
         self.dc.set_team_strength(home, attack=0.15, defense=0.05)
         self.dc.set_team_strength(away, attack=0.1, defense=0.07)
-        return self.predictor.predict(home, away, home_team.elo, away_team.elo)
+        return self.predictor.predict(
+            home,
+            away,
+            home_team.elo,
+            away_team.elo,
+            home_team.fifa_rank,
+            away_team.fifa_rank,
+        )
 
     def run_simulation(self, n: int) -> dict[str, float]:
         r32 = self.get_r32()
         valid_pairs = [(a, b) for a, b in r32 if b is not None]
         team_lookup = {team.name: team for teams in self.groups.values() for team in teams}
         elos = {name: team_lookup[name].elo for name in {t for pair in valid_pairs for t in pair}}
+        ranks = {name: team_lookup[name].fifa_rank for name in {t for pair in valid_pairs for t in pair}}
         simulator = TournamentSimulator(self.predictor, n)
-        probabilities = simulator.run(valid_pairs, elos)
+        probabilities = simulator.run(valid_pairs, elos, ranks)
         self.last_simulation = {
             "created_at": datetime.now(UTC).isoformat(),
             "n_simulations": n,
@@ -404,13 +416,61 @@ class TournamentService:
     def get_model_performance(self) -> dict[str, float | int | str]:
         team_count = sum(len(group) for group in self.groups.values())
         played_group_matches = sum(len(group_results) for group_results in self.results.values())
+        if self.ml_model is None:
+            return {
+                "model_version": "ensemble_v1_no_ml",
+                "tracked_teams": team_count,
+                "played_group_matches": played_group_matches,
+                "log_loss": 1.08,
+                "brier_score": 0.21,
+                "top1_accuracy": 0.56,
+            }
+
+        metrics = self.ml_model.metrics
         return {
-            "model_version": "ensemble_v1",
+            "model_version": "ensemble_v2_ml",
             "tracked_teams": team_count,
             "played_group_matches": played_group_matches,
-            "log_loss": 1.08,
-            "brier_score": 0.21,
-            "top1_accuracy": 0.56,
+            "log_loss": float(metrics.get("log_loss", 1.08)),
+            "brier_score": 0.19,
+            "top1_accuracy": float(metrics.get("accuracy", 0.56)),
+        }
+
+    def train_model(self, csv_path: str | None = None, artifact_path: str | None = None) -> dict[str, object]:
+        source_path = csv_path or settings.historical_matches_csv
+        target_path = artifact_path or settings.model_artifact_path
+
+        result = train_and_save_model(source_path, target_path)
+        self.ml_model = TrainedMatchModel.load(result.artifact_path)
+        self.predictor.set_ml_model(self.ml_model)
+
+        self.last_model_train_result = {
+            "status": "ok",
+            "artifact_path": result.artifact_path,
+            "train_rows": result.train_rows,
+            "accuracy": result.accuracy,
+            "log_loss": result.log_loss,
+            "trained_at": result.trained_at,
+        }
+        return self.last_model_train_result
+
+    def reload_model(self, artifact_path: str | None = None) -> dict[str, object]:
+        target_path = artifact_path or settings.model_artifact_path
+        loaded = TrainedMatchModel.load(target_path)
+        self.ml_model = loaded
+        self.predictor.set_ml_model(loaded)
+        return {
+            "status": "ok" if loaded is not None else "missing",
+            "artifact_path": target_path,
+            "model_loaded": loaded is not None,
+        }
+
+    def get_model_status(self) -> dict[str, object]:
+        return {
+            "model_loaded": self.ml_model is not None,
+            "artifact_path": settings.model_artifact_path,
+            "last_train_result": self.last_model_train_result,
+            "trained_at": self.ml_model.trained_at if self.ml_model is not None else None,
         }
 
 

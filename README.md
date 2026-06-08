@@ -28,8 +28,9 @@ npm install
 npm run dev -- --port 6238
 ```
 
-Backend: http://localhost:6239
-Frontend: http://localhost:6238
+Backend (lokal): http://localhost:6239
+Frontend (lokal): http://localhost:6238
+Tunnel URL (prod): https://wm.wentzek-home.de
 
 ## API Endpunkte
 
@@ -60,6 +61,38 @@ Frontend: http://localhost:6238
 ## Optionale API-Integration
 
 - `FOOTBALL_DATA_API_KEY` in `.env` setzen, dann zieht `GET /api/data/refresh` echte Gruppenstände von football-data.org.
+
+## Training Workflow (komplett)
+
+1. Historische Daten bereitstellen (CSV mit mindestens den Spalten: `date`, `home_team`, `away_team`, `home_score`, `away_score`).
+2. Modell trainieren:
+
+```bash
+cd backend
+python -m scripts.train_model --csv ..\data\historical\results.csv --output models_artifacts/match_outcome_model.joblib
+```
+
+3. Modellstatus prüfen:
+
+```bash
+curl http://localhost:6239/api/model/status
+```
+
+4. Training direkt per API auslösen:
+
+```bash
+curl -X POST http://localhost:6239/api/model/train \
+	-H "Content-Type: application/json" \
+	-d '{"csvPath":"..\\data\\historical\\results.csv","artifactPath":"models_artifacts/match_outcome_model.joblib"}'
+```
+
+5. Modell nach Austausch eines Artefakts neu laden:
+
+```bash
+curl -X POST "http://localhost:6239/api/model/reload"
+```
+
+Das trainierte Modell wird im Ensemble automatisch genutzt (Elo + Dixon-Coles + ML).
 
 ## Testen
 

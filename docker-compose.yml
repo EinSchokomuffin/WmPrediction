@@ -6,7 +6,9 @@ services:
       - ./backend:/app/backend
     environment:
       - DATABASE_URL=sqlite:///./wm2026.db
-      - CORS_ORIGINS=["http://localhost:6238"]
+      - CORS_ORIGINS=["https://wm.wentzek-home.de","http://localhost:6238"]
+      - MODEL_ARTIFACT_PATH=models_artifacts/match_outcome_model.joblib
+      - HISTORICAL_MATCHES_CSV=../data/historical/results.csv
     command: sh -c "pip install -e . && uvicorn api.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "6239:8000"
@@ -19,6 +21,8 @@ services:
     working_dir: /app/frontend
     volumes:
       - ./frontend:/app/frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=https://wm.wentzek-home.de
     command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
     ports:
       - "6238:3000"

@@ -15,7 +15,10 @@ dependencies = [
   "numpy>=2.0.0",
   "scipy>=1.13.0",
   "python-dotenv>=1.0.1",
-  "httpx>=0.27.0"
+  "httpx>=0.27.0",
+  "pandas>=2.2.0",
+  "scikit-learn>=1.5.0",
+  "joblib>=1.4.0"
 ]
 
 [project.optional-dependencies]
@@ -29,4 +32,4 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
-include = ["api*", "core*", "models*", "prediction*", "simulation*", "tournament*", "data*"]
+include = ["api*", "core*", "models*", "prediction*", "simulation*", "tournament*", "data*", "scripts*"]

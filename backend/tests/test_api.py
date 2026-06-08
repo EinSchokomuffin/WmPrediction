@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from pathlib import Path
 
 from api.main import app
 
@@ -117,7 +118,45 @@ def test_model_performance_endpoint() -> None:
     response = client.get("/api/predictions/performance")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["model_version"] == "ensemble_v1"
+    assert payload["model_version"] in ("ensemble_v1_no_ml", "ensemble_v2_ml")
     assert payload["tracked_teams"] == 48
+
+
+def test_model_status_endpoint() -> None:
+    response = client.get("/api/model/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "model_loaded" in payload
+    assert "artifact_path" in payload
+
+
+def test_model_train_endpoint_with_synthetic_data(tmp_path: Path) -> None:
+    csv_file = tmp_path / "historical.csv"
+    teams = ["A", "B", "C", "D", "E", "F"]
+
+    rows = ["date,home_team,away_team,home_score,away_score"]
+    day = 1
+    for cycle in range(25):
+        for i, home in enumerate(teams):
+            away = teams[(i + cycle + 1) % len(teams)]
+            home_score = (cycle + i) % 4
+            away_score = (cycle + i + 2) % 4
+            rows.append(f"2023-01-{(day % 28) + 1:02d},{home},{away},{home_score},{away_score}")
+            day += 1
+
+    csv_file.write_text("\n".join(rows), encoding="utf-8")
+    artifact_path = str(tmp_path / "model.joblib")
+
+    response = client.post(
+        "/api/model/train",
+        json={
+            "csvPath": str(csv_file),
+            "artifactPath": artifact_path,
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["train_rows"] >= 100
 
 

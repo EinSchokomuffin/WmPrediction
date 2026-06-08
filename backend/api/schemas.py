@@ -56,3 +56,8 @@ class KnockoutResultPayload(BaseModel):
     awayScoreET: int | None = Field(default=None, ge=0, le=20)
     homeScorePen: int | None = Field(default=None, ge=0, le=30)
     awayScorePen: int | None = Field(default=None, ge=0, le=30)
+
+
+class ModelTrainPayload(BaseModel):
+    csvPath: str | None = None
+    artifactPath: str | None = None

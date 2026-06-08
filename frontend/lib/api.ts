@@ -8,7 +8,7 @@ import type {
   SimulationResponse,
 } from "@/types/tournament";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:6239";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://wm.wentzek-home.de";
 
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
