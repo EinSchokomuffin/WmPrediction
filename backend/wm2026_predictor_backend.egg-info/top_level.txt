@@ -1,6 +1,0 @@
-api
-core
-models
-prediction
-simulation
-tournament
