@@ -18,18 +18,18 @@ from tournament.third_place import rank_all_third_place_teams, rank_third_place_
 
 GROUP_NAMES = [chr(c) for c in range(ord("A"), ord("L") + 1)]
 DEFAULT_GROUP_TEAMS: dict[str, list[str]] = {
-    "A": ["Mexico", "United States", "Canada", "Costa Rica"],
-    "B": ["Brazil", "Argentina", "Uruguay", "Chile"],
-    "C": ["England", "France", "Germany", "Netherlands"],
-    "D": ["Spain", "Portugal", "Italy", "Croatia"],
-    "E": ["Belgium", "Switzerland", "Denmark", "Austria"],
-    "F": ["Japan", "South Korea", "Australia", "Iran"],
-    "G": ["Morocco", "Senegal", "Nigeria", "Egypt"],
-    "H": ["Colombia", "Ecuador", "Peru", "Paraguay"],
-    "I": ["Serbia", "Poland", "Ukraine", "Czech Republic"],
-    "J": ["Turkey", "Sweden", "Norway", "Scotland"],
-    "K": ["Cameroon", "Algeria", "Tunisia", "Ghana"],
-    "L": ["Qatar", "Saudi Arabia", "United Arab Emirates", "Iraq"],
+    "A": ["Tschechien", "Mexiko", "Südafrika", "Südkorea"],
+    "B": ["Bosnien-Herzegowina", "Kanada", "Katar", "Schweiz"],
+    "C": ["Brasilien", "Marokko", "Haiti", "Schottland"],
+    "D": ["Türkei", "USA", "Paraguay", "Australien"],
+    "E": ["Deutschland", "Curaçao", "Elfenbeinküste", "Ecuador"],
+    "F": ["Schweden", "Niederlande", "Japan", "Tunesien"],
+    "G": ["Belgien", "Ägypten", "Iran", "Neuseeland"],
+    "H": ["Spanien", "Kapverdische Inseln", "Saudi-Arabien", "Uruguay"],
+    "I": ["Irak", "Frankreich", "Sénégal", "Norwegen"],
+    "J": ["Argentinien", "Algerien", "Österreich", "Jordanien"],
+    "K": ["DR Kongo", "Portugal", "Usbekistan", "Kolumbien"],
+    "L": ["England", "Kroatien", "Ghana", "Panama"],
 }
 
 
