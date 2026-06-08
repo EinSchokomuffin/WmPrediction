@@ -11,6 +11,7 @@ from api.routes.simulation import router as simulation_router
 from api.routes.standings import router as standings_router
 from core.config import settings
 from core.database import Base, engine
+from models import db as _db_models
 
 Base.metadata.create_all(bind=engine)
 

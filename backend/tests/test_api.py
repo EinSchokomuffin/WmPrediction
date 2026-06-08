@@ -159,4 +159,16 @@ def test_model_train_endpoint_with_synthetic_data(tmp_path: Path) -> None:
     assert payload["status"] == "ok"
     assert payload["train_rows"] >= 100
 
+    status_response = client.get("/api/model/status")
+    assert status_response.status_code == 200
+    status_payload = status_response.json()
+    assert status_payload["last_train_result"] is not None
+    assert status_payload["last_train_result"]["artifact_path"] == artifact_path
+
+    history_response = client.get("/api/model/history?limit=5")
+    assert history_response.status_code == 200
+    history_payload = history_response.json()
+    assert len(history_payload["runs"]) >= 1
+    assert history_payload["runs"][0]["artifact_path"] == artifact_path
+
 

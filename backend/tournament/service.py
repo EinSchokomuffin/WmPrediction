@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import json
+from sqlalchemy.exc import OperationalError
 
 from core.config import settings
+from core.database import SessionLocal
 from data.etl.refresh import refresh_groups_from_football_data
+from models.db import ModelTrainingRun
 from prediction.dixon_coles import DixonColesModel
 from prediction.elo import EloRating
 from prediction.ensemble import EnsemblePredictor
@@ -33,7 +37,31 @@ class TournamentService:
         self.last_refresh_at: datetime | None = None
         self.knockout_matches: dict[int, dict[str, object]] = {}
         self.last_simulation: dict[str, object] | None = None
-        self.last_model_train_result: dict[str, object] | None = None
+        self.last_model_train_result: dict[str, object] | None = self._load_last_training_run()
+
+    @staticmethod
+    def _serialize_training_run(run: ModelTrainingRun) -> dict[str, object]:
+        return {
+            "status": "ok",
+            "artifact_path": run.artifact_path,
+            "source_csv_path": run.source_csv_path,
+            "train_rows": run.train_rows,
+            "accuracy": run.accuracy,
+            "log_loss": run.log_loss,
+            "trained_at": run.trained_at.replace(tzinfo=UTC).isoformat(),
+            "metrics": json.loads(run.metrics_json),
+            "created_at": run.created_at.replace(tzinfo=UTC).isoformat(),
+        }
+
+    def _load_last_training_run(self) -> dict[str, object] | None:
+        with SessionLocal() as db:
+            try:
+                latest = db.query(ModelTrainingRun).order_by(ModelTrainingRun.id.desc()).first()
+            except OperationalError:
+                return None
+            if latest is None:
+                return None
+            return self._serialize_training_run(latest)
 
     @staticmethod
     def _match_stage(match_number: int) -> str:
@@ -444,21 +472,45 @@ class TournamentService:
         self.ml_model = TrainedMatchModel.load(result.artifact_path)
         self.predictor.set_ml_model(self.ml_model)
 
-        self.last_model_train_result = {
-            "status": "ok",
-            "artifact_path": result.artifact_path,
-            "train_rows": result.train_rows,
+        metrics_payload = {
             "accuracy": result.accuracy,
             "log_loss": result.log_loss,
-            "trained_at": result.trained_at,
         }
+
+        with SessionLocal() as db:
+            run = ModelTrainingRun(
+                artifact_path=result.artifact_path,
+                source_csv_path=source_path,
+                train_rows=result.train_rows,
+                accuracy=result.accuracy,
+                log_loss=result.log_loss,
+                trained_at=datetime.fromisoformat(result.trained_at.replace("Z", "+00:00")).replace(tzinfo=None),
+                metrics_json=json.dumps(metrics_payload),
+            )
+            db.add(run)
+            db.commit()
+            db.refresh(run)
+
+        self.last_model_train_result = self._serialize_training_run(run)
         return self.last_model_train_result
+
+    def get_model_training_history(self, limit: int = 10) -> list[dict[str, object]]:
+        capped = max(1, min(limit, 100))
+        with SessionLocal() as db:
+            rows = (
+                db.query(ModelTrainingRun)
+                .order_by(ModelTrainingRun.id.desc())
+                .limit(capped)
+                .all()
+            )
+            return [self._serialize_training_run(row) for row in rows]
 
     def reload_model(self, artifact_path: str | None = None) -> dict[str, object]:
         target_path = artifact_path or settings.model_artifact_path
         loaded = TrainedMatchModel.load(target_path)
         self.ml_model = loaded
         self.predictor.set_ml_model(loaded)
+        self.last_model_train_result = self._load_last_training_run()
         return {
             "status": "ok" if loaded is not None else "missing",
             "artifact_path": target_path,
@@ -466,10 +518,12 @@ class TournamentService:
         }
 
     def get_model_status(self) -> dict[str, object]:
+        latest = self._load_last_training_run()
+        self.last_model_train_result = latest
         return {
             "model_loaded": self.ml_model is not None,
             "artifact_path": settings.model_artifact_path,
-            "last_train_result": self.last_model_train_result,
+            "last_train_result": latest,
             "trained_at": self.ml_model.trained_at if self.ml_model is not None else None,
         }
 

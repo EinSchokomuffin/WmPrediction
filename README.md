@@ -94,6 +94,15 @@ curl -X POST "http://localhost:6239/api/model/reload"
 
 Das trainierte Modell wird im Ensemble automatisch genutzt (Elo + Dixon-Coles + ML).
 
+Persistenz:
+
+- Jeder Training-Run wird in der DB-Tabelle `model_training_runs` gespeichert (Artefaktpfad, CSV-Quelle, Metriken, Zeitstempel).
+- Verlauf per API abrufbar:
+
+```bash
+curl "http://localhost:6239/api/model/history?limit=20"
+```
+
 ## Testen
 
 ```bash

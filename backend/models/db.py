@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SqlEnum, Float, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Enum as SqlEnum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
@@ -61,3 +61,17 @@ class Prediction(Base):
     expected_home_goals: Mapped[float] = mapped_column(Float)
     expected_away_goals: Mapped[float] = mapped_column(Float)
     model_version: Mapped[str] = mapped_column(String, default="ensemble_v0")
+
+
+class ModelTrainingRun(Base):
+    __tablename__ = "model_training_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    artifact_path: Mapped[str] = mapped_column(String, nullable=False)
+    source_csv_path: Mapped[str] = mapped_column(String, nullable=False)
+    train_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    accuracy: Mapped[float] = mapped_column(Float, nullable=False)
+    log_loss: Mapped[float] = mapped_column(Float, nullable=False)
+    trained_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    metrics_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

@@ -11,6 +11,11 @@ def get_model_status() -> dict[str, object]:
     return service.get_model_status()
 
 
+@router.get("/history")
+def get_model_history(limit: int = 10) -> dict[str, list[dict[str, object]]]:
+    return {"runs": service.get_model_training_history(limit)}
+
+
 @router.post("/reload")
 def reload_model(artifactPath: str | None = None) -> dict[str, object]:
     return service.reload_model(artifactPath)
