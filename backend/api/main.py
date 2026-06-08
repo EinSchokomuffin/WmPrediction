@@ -27,7 +27,7 @@ app.add_middleware(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["wm.wentzek-home.de", "localhost", "127.0.0.1", "testserver"],
+    allowed_hosts=["wm.wentzek-home.de", "localhost", "127.0.0.1", "testserver", "backend"],
 )
 
 app.include_router(groups_router)
