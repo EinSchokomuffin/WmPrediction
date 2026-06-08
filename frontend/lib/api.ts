@@ -74,7 +74,7 @@ export async function runSimulation(n: number): Promise<SimulationResponse> {
 }
 
 export async function refreshData(): Promise<RefreshDataResponse> {
-  const response = await fetch(buildApiUrl("/api/data/refresh"), {
+  const response = await fetch("/api/data/refresh", {
     method: "POST",
     cache: "no-store",
   });
