@@ -12,6 +12,21 @@ class EnsemblePredictor:
     def set_ml_model(self, ml_model: TrainedMatchModel | None) -> None:
         self.ml_model = ml_model
 
+    @staticmethod
+    def _attack_strength(elo: float, rank: int, home_advantage: bool = False) -> float:
+        elo_factor = (elo - 1500.0) / 180.0
+        rank_factor = (50.0 - rank) / 50.0
+        base = 0.12 + elo_factor * 0.18 + rank_factor * 0.12
+        if home_advantage:
+            base += 0.08
+        return max(-0.35, min(0.45, base))
+
+    @staticmethod
+    def _defense_strength(elo: float, rank: int) -> float:
+        elo_factor = (elo - 1500.0) / 200.0
+        rank_factor = (50.0 - rank) / 60.0
+        return max(-0.25, min(0.35, 0.08 + elo_factor * 0.14 + rank_factor * 0.08))
+
     def predict(
         self,
         home: str,
@@ -21,6 +36,17 @@ class EnsemblePredictor:
         home_rank: int,
         away_rank: int,
     ) -> dict[str, float]:
+        self.dc.set_team_strength(
+            home,
+            attack=self._attack_strength(home_elo, home_rank, home_advantage=True),
+            defense=self._defense_strength(home_elo, home_rank),
+        )
+        self.dc.set_team_strength(
+            away,
+            attack=self._attack_strength(away_elo, away_rank, home_advantage=False),
+            defense=self._defense_strength(away_elo, away_rank),
+        )
+
         elo_pred = self.elo.win_probability(home_elo, away_elo)
         dc_pred = self.dc.predict_match(home, away)
         ml_pred = (

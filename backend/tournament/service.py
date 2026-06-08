@@ -19,6 +19,56 @@ from tournament.group_phase import calculate_standings, generate_group_schedule
 from tournament.third_place import rank_all_third_place_teams, rank_third_place_teams
 
 GROUP_NAMES = [chr(c) for c in range(ord("A"), ord("L") + 1)]
+TEAM_PROFILES: dict[str, dict[str, float | int | tuple[str, ...]]] = {
+    "Tschechien": {"elo": 1768.0, "fifa_rank": 36, "aliases": ("Czech Republic",)},
+    "Mexiko": {"elo": 1849.0, "fifa_rank": 15, "aliases": ("Mexico",)},
+    "Südafrika": {"elo": 1647.0, "fifa_rank": 59, "aliases": ("South Africa",)},
+    "Südkorea": {"elo": 1794.0, "fifa_rank": 23, "aliases": ("South Korea", "Korea Republic")},
+    "Bosnien-Herzegowina": {"elo": 1673.0, "fifa_rank": 74, "aliases": ("Bosnia and Herzegovina",)},
+    "Kanada": {"elo": 1779.0, "fifa_rank": 49, "aliases": ("Canada",)},
+    "Katar": {"elo": 1663.0, "fifa_rank": 35, "aliases": ("Qatar",)},
+    "Schweiz": {"elo": 1845.0, "fifa_rank": 19, "aliases": ("Switzerland",)},
+    "Brasilien": {"elo": 1958.0, "fifa_rank": 5, "aliases": ("Brazil",)},
+    "Marokko": {"elo": 1885.0, "fifa_rank": 12, "aliases": ("Morocco",)},
+    "Haiti": {"elo": 1528.0, "fifa_rank": 90, "aliases": ("Haiti",)},
+    "Schottland": {"elo": 1797.0, "fifa_rank": 39, "aliases": ("Scotland",)},
+    "Türkei": {"elo": 1798.0, "fifa_rank": 40, "aliases": ("Turkey",)},
+    "USA": {"elo": 1816.0, "fifa_rank": 11, "aliases": ("United States", "USA")},
+    "Paraguay": {"elo": 1710.0, "fifa_rank": 56, "aliases": ("Paraguay",)},
+    "Australien": {"elo": 1748.0, "fifa_rank": 24, "aliases": ("Australia",)},
+    "Deutschland": {"elo": 1903.0, "fifa_rank": 10, "aliases": ("Germany",)},
+    "Curaçao": {"elo": 1607.0, "fifa_rank": 91, "aliases": ("Curacao", "Curaçao")},
+    "Elfenbeinküste": {"elo": 1765.0, "fifa_rank": 38, "aliases": ("Ivory Coast", "Cote d'Ivoire", "Côte d'Ivoire")},
+    "Ecuador": {"elo": 1840.0, "fifa_rank": 30, "aliases": ("Ecuador",)},
+    "Schweden": {"elo": 1792.0, "fifa_rank": 28, "aliases": ("Sweden",)},
+    "Niederlande": {"elo": 1928.0, "fifa_rank": 7, "aliases": ("Netherlands",)},
+    "Japan": {"elo": 1799.0, "fifa_rank": 18, "aliases": ("Japan",)},
+    "Tunesien": {"elo": 1672.0, "fifa_rank": 41, "aliases": ("Tunisia",)},
+    "Belgien": {"elo": 1880.0, "fifa_rank": 3, "aliases": ("Belgium",)},
+    "Ägypten": {"elo": 1711.0, "fifa_rank": 36, "aliases": ("Egypt",)},
+    "Iran": {"elo": 1787.0, "fifa_rank": 20, "aliases": ("Iran", "IR Iran")},
+    "Neuseeland": {"elo": 1649.0, "fifa_rank": 94, "aliases": ("New Zealand",)},
+    "Spanien": {"elo": 1940.0, "fifa_rank": 8, "aliases": ("Spain",)},
+    "Kapverdische Inseln": {"elo": 1682.0, "fifa_rank": 65, "aliases": ("Cape Verde",)},
+    "Saudi-Arabien": {"elo": 1677.0, "fifa_rank": 53, "aliases": ("Saudi Arabia",)},
+    "Uruguay": {"elo": 1889.0, "fifa_rank": 14, "aliases": ("Uruguay",)},
+    "Irak": {"elo": 1587.0, "fifa_rank": 58, "aliases": ("Iraq",)},
+    "Frankreich": {"elo": 1984.0, "fifa_rank": 2, "aliases": ("France",)},
+    "Sénégal": {"elo": 1778.0, "fifa_rank": 17, "aliases": ("Senegal", "Sénégal")},
+    "Norwegen": {"elo": 1781.0, "fifa_rank": 43, "aliases": ("Norway",)},
+    "Argentinien": {"elo": 1989.0, "fifa_rank": 1, "aliases": ("Argentina",)},
+    "Algerien": {"elo": 1704.0, "fifa_rank": 44, "aliases": ("Algeria",)},
+    "Österreich": {"elo": 1819.0, "fifa_rank": 25, "aliases": ("Austria",)},
+    "Jordanien": {"elo": 1616.0, "fifa_rank": 68, "aliases": ("Jordan",)},
+    "DR Kongo": {"elo": 1644.0, "fifa_rank": 61, "aliases": ("DR Congo", "Congo DR")},
+    "Portugal": {"elo": 1912.0, "fifa_rank": 6, "aliases": ("Portugal",)},
+    "Usbekistan": {"elo": 1661.0, "fifa_rank": 64, "aliases": ("Uzbekistan",)},
+    "Kolumbien": {"elo": 1863.0, "fifa_rank": 9, "aliases": ("Colombia",)},
+    "England": {"elo": 1960.0, "fifa_rank": 4, "aliases": ("England",)},
+    "Kroatien": {"elo": 1848.0, "fifa_rank": 13, "aliases": ("Croatia",)},
+    "Ghana": {"elo": 1655.0, "fifa_rank": 70, "aliases": ("Ghana",)},
+    "Panama": {"elo": 1669.0, "fifa_rank": 45, "aliases": ("Panama",)},
+}
 DEFAULT_GROUP_TEAMS: dict[str, list[str]] = {
     "A": ["Tschechien", "Mexiko", "Südafrika", "Südkorea"],
     "B": ["Bosnien-Herzegowina", "Kanada", "Katar", "Schweiz"],
@@ -32,6 +82,11 @@ DEFAULT_GROUP_TEAMS: dict[str, list[str]] = {
     "J": ["Argentinien", "Algerien", "Österreich", "Jordanien"],
     "K": ["DR Kongo", "Portugal", "Usbekistan", "Kolumbien"],
     "L": ["England", "Kroatien", "Ghana", "Panama"],
+}
+TEAM_NAME_ALIASES: dict[str, str] = {
+    alias.lower(): canonical
+    for canonical, profile in TEAM_PROFILES.items()
+    for alias in (canonical, *tuple(profile.get("aliases", ())))
 }
 
 
@@ -54,6 +109,25 @@ class TournamentService:
         self.knockout_matches: dict[int, dict[str, object]] = {}
         self.last_simulation: dict[str, object] | None = None
         self.last_model_train_result: dict[str, object] | None = self._load_last_training_run()
+
+    @staticmethod
+    def _lookup_team_profile(name: str) -> dict[str, float | int | tuple[str, ...]] | None:
+        canonical = TEAM_NAME_ALIASES.get(name.strip().lower())
+        if canonical is None:
+            return None
+        return TEAM_PROFILES[canonical]
+
+    def _build_team_state(
+        self,
+        team_name: str,
+        default_rank: int,
+        fallback_elo: float | None = None,
+        fallback_rank: int | None = None,
+    ) -> TeamState:
+        profile = self._lookup_team_profile(team_name)
+        elo = float(profile["elo"]) if profile is not None else float(fallback_elo if fallback_elo is not None else 1500.0)
+        fifa_rank = int(profile["fifa_rank"]) if profile is not None else int(fallback_rank if fallback_rank is not None else default_rank)
+        return TeamState(name=team_name, elo=elo, fifa_rank=fifa_rank)
 
     @staticmethod
     def _serialize_training_run(run: ModelTrainingRun) -> dict[str, object]:
@@ -233,7 +307,7 @@ class TournamentService:
         for group in GROUP_NAMES:
             teams[group] = []
             for country in DEFAULT_GROUP_TEAMS[group]:
-                teams[group].append(TeamState(name=country, elo=1650.0 - rank * 5, fifa_rank=rank))
+                teams[group].append(self._build_team_state(country, rank))
                 rank += 1
         return teams
 
@@ -248,12 +322,13 @@ class TournamentService:
         self.groups = {
             **self.groups,
             normalized_group: [
-                TeamState(
-                    name=str(team["name"]),
-                    elo=float(team.get("elo", 1500.0)),
-                    fifa_rank=int(team.get("fifaRanking", 999)),
+                self._build_team_state(
+                    str(team["name"]),
+                    index + 1,
+                    fallback_elo=float(team.get("elo", 1500.0)),
+                    fallback_rank=int(team.get("fifaRanking", 999)),
                 )
-                for team in teams
+                for index, team in enumerate(teams)
             ],
         }
         self.results = {**self.results, normalized_group: []}
@@ -265,12 +340,13 @@ class TournamentService:
         for group, teams in groups.items():
             normalized_group = group.upper()
             updated_groups[normalized_group] = [
-                TeamState(
-                    name=str(team["name"]),
-                    elo=float(team.get("elo", 1500.0)),
-                    fifa_rank=int(team.get("fifaRanking", 999)),
+                self._build_team_state(
+                    str(team["name"]),
+                    index + 1,
+                    fallback_elo=float(team.get("elo", 1500.0)),
+                    fallback_rank=int(team.get("fifaRanking", 999)),
                 )
-                for team in teams
+                for index, team in enumerate(teams)
             ]
         self.groups = updated_groups
         self.results = {group: [] for group in GROUP_NAMES}
@@ -549,8 +625,6 @@ class TournamentService:
         team_lookup = {team.name: team for teams in self.groups.values() for team in teams}
         home_team = team_lookup[home]
         away_team = team_lookup[away]
-        self.dc.set_team_strength(home, attack=0.15, defense=0.05)
-        self.dc.set_team_strength(away, attack=0.1, defense=0.07)
         return self.predictor.predict(
             home,
             away,
