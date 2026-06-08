@@ -74,6 +74,8 @@ export interface MatchPredictionResult {
   away_win_prob: number;
   expected_home_goals: number;
   expected_away_goals: number;
+  most_likely_home_goals: number;
+  most_likely_away_goals: number;
   confidence: number;
 }
 

@@ -29,6 +29,7 @@ class DixonColesModel:
             poisson.pmf(np.arange(max_goals + 1), mu_away),
         )
         matrix = matrix / matrix.sum()
+        most_likely_index = np.unravel_index(np.argmax(matrix), matrix.shape)
         home_win = float(np.tril(matrix, -1).sum())
         draw = float(np.trace(matrix))
         away_win = float(np.triu(matrix, 1).sum())
@@ -41,4 +42,6 @@ class DixonColesModel:
             "away_win_prob": away_win,
             "expected_home_goals": expected_home,
             "expected_away_goals": expected_away,
+            "most_likely_home_goals": int(most_likely_index[0]),
+            "most_likely_away_goals": int(most_likely_index[1]),
         }

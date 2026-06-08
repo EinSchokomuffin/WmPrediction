@@ -30,6 +30,8 @@ class MatchPredictionResponse(BaseModel):
     away_win_prob: float
     expected_home_goals: float
     expected_away_goals: float
+    most_likely_home_goals: int
+    most_likely_away_goals: int
     confidence: float
 
 

@@ -74,6 +74,9 @@ export function PredictionForm({ groups }: PredictionFormProps) {
           <h2>
             {homeTeam} vs {awayTeam}
           </h2>
+          <p>
+            <strong>Wahrscheinlichstes Ergebnis:</strong> {homeTeam} {result.most_likely_home_goals}:{result.most_likely_away_goals} {awayTeam}
+          </p>
           <div className="prediction-grid">
             <div>
               <strong>Heimsieg</strong>
