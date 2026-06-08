@@ -77,5 +77,7 @@ class EnsemblePredictor:
             "away_win_prob": away_win,
             "expected_home_goals": dc_pred["expected_home_goals"],
             "expected_away_goals": dc_pred["expected_away_goals"],
+            "most_likely_home_goals": int(dc_pred["most_likely_home_goals"]),
+            "most_likely_away_goals": int(dc_pred["most_likely_away_goals"]),
             "confidence": max(home_win, draw, away_win),
         }
