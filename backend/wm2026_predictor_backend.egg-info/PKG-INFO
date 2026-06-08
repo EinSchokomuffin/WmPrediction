@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: wm2026-predictor-backend
+Version: 0.1.0
+Summary: WM 2026 predictor backend
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: sqlalchemy>=2.0.30
+Requires-Dist: pydantic-settings>=2.3.4
+Requires-Dist: numpy>=2.0.0
+Requires-Dist: scipy>=1.13.0
+Requires-Dist: python-dotenv>=1.0.1
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
