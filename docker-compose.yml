@@ -7,6 +7,7 @@ services:
     environment:
       - DATABASE_URL=sqlite:///./wm2026.db
       - CORS_ORIGINS=["https://wm.wentzek-home.de","http://localhost:6238"]
+      - FOOTBALL_DATA_API_KEY=${FOOTBALL_DATA_API_KEY:-}
       - MODEL_ARTIFACT_PATH=models_artifacts/match_outcome_model.joblib
       - HISTORICAL_MATCHES_CSV=../data/historical/results.csv
     command: sh -c "pip install -e . && uvicorn api.main:app --host 0.0.0.0 --port 8000"
