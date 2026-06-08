@@ -12,6 +12,10 @@ class GroupSetupPayload(BaseModel):
     teams: list[TeamInput] = Field(min_length=4, max_length=4)
 
 
+class BulkGroupSetupPayload(BaseModel):
+    groups: dict[str, list[TeamInput]]
+
+
 class ResultPayload(BaseModel):
     group: str = Field(min_length=1, max_length=1)
     home: str

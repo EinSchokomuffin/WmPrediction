@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from api.schemas import GroupSetupPayload, ResultPayload
+from api.schemas import BulkGroupSetupPayload, GroupSetupPayload, ResultPayload
 from tournament.service import service
 
 router = APIRouter(prefix="/api/groups", tags=["groups"])
@@ -35,6 +35,12 @@ def get_group_standings(group: str) -> dict[str, object]:
 @router.post("/setup")
 def setup_group(payload: GroupSetupPayload) -> dict[str, str]:
     service.set_group_teams(payload.group, [team.model_dump() for team in payload.teams])
+    return {"status": "ok"}
+
+
+@router.post("/setup-all")
+def setup_all_groups(payload: BulkGroupSetupPayload) -> dict[str, str]:
+    service.set_all_groups({group: [team.model_dump() for team in teams] for group, teams in payload.groups.items()})
     return {"status": "ok"}
 
 

@@ -67,3 +67,20 @@ export interface RefreshDataResponse {
   reason: string;
   refreshed_at: string;
 }
+
+export interface GroupMatch {
+  match_number: number;
+  stage: string;
+  group: string;
+  home: string;
+  away: string;
+  matchday: number;
+  home_goals: number | null;
+  away_goals: number | null;
+}
+
+export interface TournamentPlayoutResponse {
+  standings: GroupStandings;
+  group_matches: Record<string, GroupMatch[]>;
+  bracket: FullBracketResponse;
+}

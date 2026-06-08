@@ -1,5 +1,6 @@
 import { getLatestSimulation, getModelPerformance } from "@/lib/api";
 import { RefreshDataCard } from "@/components/RefreshDataCard";
+import { TournamentPlayoutCard } from "@/components/TournamentPlayoutCard";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ export default async function SimulationPage() {
   return (
     <section className="grid">
       <RefreshDataCard />
+
+      <TournamentPlayoutCard />
 
       <article className="card">
         <h2>Letzte Simulation</h2>

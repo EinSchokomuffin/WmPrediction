@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import json
+import numpy as np
+import random
 from sqlalchemy.exc import OperationalError
 
 from core.config import settings
@@ -254,6 +256,26 @@ class TournamentService:
                 for team in teams
             ],
         }
+        self.results = {**self.results, normalized_group: []}
+        self.knockout_matches = {}
+        self.last_simulation = None
+
+    def set_all_groups(self, groups: dict[str, list[dict[str, int | float | str]]]) -> None:
+        updated_groups = {**self.groups}
+        for group, teams in groups.items():
+            normalized_group = group.upper()
+            updated_groups[normalized_group] = [
+                TeamState(
+                    name=str(team["name"]),
+                    elo=float(team.get("elo", 1500.0)),
+                    fifa_rank=int(team.get("fifaRanking", 999)),
+                )
+                for team in teams
+            ]
+        self.groups = updated_groups
+        self.results = {group: [] for group in GROUP_NAMES}
+        self.knockout_matches = {}
+        self.last_simulation = None
 
     def get_group_schedule(self, group: str) -> list[dict[str, object]]:
         normalized_group = group.upper()
@@ -265,6 +287,139 @@ class TournamentService:
             }
         )
         return [row for row in schedule if str(row["group"]).upper() == normalized_group]
+
+    def get_all_group_matches(self) -> dict[str, list[dict[str, object]]]:
+        schedules = generate_group_schedule({group: [team.name for team in teams] for group, teams in self.groups.items()})
+        merged: dict[str, list[dict[str, object]]] = {group: [] for group in GROUP_NAMES}
+        result_lookup = {
+            group: {(str(row["home"]), str(row["away"])): row for row in rows}
+            for group, rows in self.results.items()
+        }
+        for match in schedules:
+            group = str(match["group"])
+            played = result_lookup[group].get((str(match["home"]), str(match["away"])))
+            merged[group].append(
+                {
+                    **match,
+                    "home_goals": int(played["home_goals"]) if played else None,
+                    "away_goals": int(played["away_goals"]) if played else None,
+                }
+            )
+        return merged
+
+    @staticmethod
+    def _attack_strength(team: TeamState) -> float:
+        elo_factor = (team.elo - 1500.0) / 180.0
+        rank_factor = (50.0 - team.fifa_rank) / 50.0
+        return max(-0.35, min(0.45, 0.12 + elo_factor * 0.18 + rank_factor * 0.12))
+
+    @staticmethod
+    def _defense_strength(team: TeamState) -> float:
+        elo_factor = (team.elo - 1500.0) / 200.0
+        rank_factor = (50.0 - team.fifa_rank) / 60.0
+        return max(-0.25, min(0.35, 0.08 + elo_factor * 0.14 + rank_factor * 0.08))
+
+    def _configure_match_strengths(self, home_team: TeamState, away_team: TeamState) -> None:
+        self.dc.set_team_strength(home_team.name, attack=self._attack_strength(home_team) + 0.08, defense=self._defense_strength(home_team))
+        self.dc.set_team_strength(away_team.name, attack=self._attack_strength(away_team), defense=self._defense_strength(away_team))
+
+    def _team_lookup(self) -> dict[str, TeamState]:
+        return {team.name: team for teams in self.groups.values() for team in teams}
+
+    @staticmethod
+    def _poisson_goals(expected_goals: float) -> int:
+        lam = max(0.15, min(expected_goals, 4.5))
+        return int(min(9, np.random.poisson(lam)))
+
+    @staticmethod
+    def _penalty_score() -> tuple[int, int]:
+        home_pen = 3 + random.randint(0, 2)
+        away_pen = 3 + random.randint(0, 2)
+        while home_pen == away_pen:
+            if random.random() >= 0.5:
+                home_pen += 1
+            else:
+                away_pen += 1
+        return home_pen, away_pen
+
+    def _simulate_match_scores(self, home_team: TeamState, away_team: TeamState, knockout: bool = False) -> dict[str, int | None]:
+        self._configure_match_strengths(home_team, away_team)
+        prediction = self.predictor.predict(
+            home_team.name,
+            away_team.name,
+            home_team.elo,
+            away_team.elo,
+            home_team.fifa_rank,
+            away_team.fifa_rank,
+        )
+        home_score = self._poisson_goals(prediction["expected_home_goals"])
+        away_score = self._poisson_goals(prediction["expected_away_goals"])
+        response: dict[str, int | None] = {
+            "home_score": home_score,
+            "away_score": away_score,
+            "home_score_et": None,
+            "away_score_et": None,
+            "home_score_pen": None,
+            "away_score_pen": None,
+        }
+
+        if knockout and home_score == away_score:
+            home_et = self._poisson_goals(max(0.12, prediction["expected_home_goals"] * 0.35))
+            away_et = self._poisson_goals(max(0.12, prediction["expected_away_goals"] * 0.35))
+            response["home_score_et"] = home_et
+            response["away_score_et"] = away_et
+            if home_et == away_et:
+                home_pen, away_pen = self._penalty_score()
+                response["home_score_pen"] = home_pen
+                response["away_score_pen"] = away_pen
+
+        return response
+
+    def simulate_tournament_playout(self) -> dict[str, object]:
+        self.results = {group: [] for group in GROUP_NAMES}
+        self.knockout_matches = {}
+        self.last_simulation = None
+
+        team_lookup = self._team_lookup()
+        schedules = generate_group_schedule({group: [team.name for team in teams] for group, teams in self.groups.items()})
+
+        for match in schedules:
+            group = str(match["group"])
+            home_name = str(match["home"])
+            away_name = str(match["away"])
+            score = self._simulate_match_scores(team_lookup[home_name], team_lookup[away_name], knockout=False)
+            self.results[group] = self.results[group] + [
+                {
+                    "home": home_name,
+                    "away": away_name,
+                    "home_goals": int(score["home_score"]),
+                    "away_goals": int(score["away_score"]),
+                }
+            ]
+
+        self._ensure_knockout_ready()
+        for match_number in range(73, 105):
+            match = self.knockout_matches[match_number]
+            home_name = match["home_team"]
+            away_name = match["away_team"]
+            if not isinstance(home_name, str) or not isinstance(away_name, str):
+                continue
+            score = self._simulate_match_scores(team_lookup[home_name], team_lookup[away_name], knockout=True)
+            self.submit_knockout_result(
+                match_number=match_number,
+                home_score=int(score["home_score"]),
+                away_score=int(score["away_score"]),
+                home_score_et=int(score["home_score_et"]) if score["home_score_et"] is not None else None,
+                away_score_et=int(score["away_score_et"]) if score["away_score_et"] is not None else None,
+                home_score_pen=int(score["home_score_pen"]) if score["home_score_pen"] is not None else None,
+                away_score_pen=int(score["away_score_pen"]) if score["away_score_pen"] is not None else None,
+            )
+
+        return {
+            "standings": self.get_standings(),
+            "group_matches": self.get_all_group_matches(),
+            "bracket": self.get_bracket(),
+        }
 
     def add_result(self, group: str, home: str, away: str, home_goals: int, away_goals: int) -> list[tuple[str, dict[str, int]]]:
         normalized_group = group.upper()

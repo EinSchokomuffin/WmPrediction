@@ -69,6 +69,38 @@ def test_refresh_endpoint() -> None:
     assert "refreshed_at" in payload
 
 
+def test_bulk_group_setup_endpoint() -> None:
+    response = client.post(
+        "/api/groups/setup-all",
+        json={
+            "groups": {
+                "A": [
+                    {"name": "Alpha", "elo": 1600, "fifaRanking": 1},
+                    {"name": "Beta", "elo": 1590, "fifaRanking": 2},
+                    {"name": "Gamma", "elo": 1580, "fifaRanking": 3},
+                    {"name": "Delta", "elo": 1570, "fifaRanking": 4},
+                ]
+            }
+        },
+    )
+    assert response.status_code == 200
+
+    groups_response = client.get("/api/groups")
+    assert groups_response.status_code == 200
+    assert groups_response.json()["A"][0]["name"] == "Alpha"
+
+
+def test_full_tournament_playout_endpoint() -> None:
+    response = client.post("/api/simulation/playout")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "standings" in payload
+    assert "group_matches" in payload
+    assert "bracket" in payload
+    assert len(payload["group_matches"]["A"]) == 6
+    assert len(payload["bracket"]["final"]) == 1
+
+
 def test_bracket_progression_after_knockout_results() -> None:
     r32_response = client.get("/api/bracket/r32")
     assert r32_response.status_code == 200

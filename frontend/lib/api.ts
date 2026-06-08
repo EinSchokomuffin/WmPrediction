@@ -1,11 +1,13 @@
 import type {
   FullBracketResponse,
+  GroupMatch,
   GroupMap,
   GroupStandings,
   LatestSimulationResponse,
   ModelPerformanceResponse,
   RefreshDataResponse,
   SimulationResponse,
+  TournamentPlayoutResponse,
 } from "@/types/tournament";
 
 const SERVER_API_BASE = process.env.INTERNAL_API_URL ?? "http://backend:8000";
@@ -34,6 +36,10 @@ export function getStandings(): Promise<GroupStandings> {
 
 export function getBracket(): Promise<{ round_of_32: [string, string | null][] }> {
   return request<{ round_of_32: [string, string | null][] }>("/api/bracket/r32");
+}
+
+export function getFullBracketState(): Promise<FullBracketResponse> {
+  return request<FullBracketResponse>("/api/bracket");
 }
 
 export function getSimulation(): Promise<{ winner_probabilities: Record<string, number> }> {
@@ -82,4 +88,27 @@ export async function refreshData(): Promise<RefreshDataResponse> {
     throw new Error(`Refresh request failed: ${response.status}`);
   }
   return (await response.json()) as RefreshDataResponse;
+}
+
+export async function saveAllGroups(groups: GroupMap): Promise<{ status: string }> {
+  const response = await fetch(buildApiUrl("/api/groups/setup-all"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ groups }),
+  });
+  if (!response.ok) {
+    throw new Error(`Save groups failed: ${response.status}`);
+  }
+  return (await response.json()) as { status: string };
+}
+
+export async function runTournamentPlayout(): Promise<TournamentPlayoutResponse> {
+  const response = await fetch(buildApiUrl("/api/simulation/playout"), {
+    method: "POST",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(`Tournament playout failed: ${response.status}`);
+  }
+  return (await response.json()) as TournamentPlayoutResponse;
 }

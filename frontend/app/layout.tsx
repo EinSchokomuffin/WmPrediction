@@ -21,6 +21,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <h1 style={{ marginTop: 0 }}>WM 2026 Predictor</h1>
             <nav style={{ display: "flex", gap: 12 }}>
               <Link href="/">Dashboard</Link>
+              <Link href="/setup">Setup</Link>
               <Link href="/groups">Gruppen</Link>
               <Link href="/bracket">Bracket</Link>
               <Link href="/simulation">Simulation</Link>
