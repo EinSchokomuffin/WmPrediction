@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getLatestSimulation, runSimulation } from "@/lib/api";
+import { getLatestSimulation } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +11,7 @@ export default async function HomePage() {
     winner_probabilities: {},
   }));
 
-  const fallback =
-    Object.keys(latest.winner_probabilities).length === 0
-      ? await runSimulation(250).catch(() => ({ winner_probabilities: {} }))
-      : { winner_probabilities: latest.winner_probabilities };
-
-  const winnerProbabilities: Record<string, number> = fallback.winner_probabilities;
+  const winnerProbabilities: Record<string, number> = latest.winner_probabilities;
 
   const top = Object.entries(winnerProbabilities)
     .sort((a, b) => b[1] - a[1])
