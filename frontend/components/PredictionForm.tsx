@@ -10,15 +10,28 @@ interface PredictionFormProps {
 }
 
 export function PredictionForm({ groups }: PredictionFormProps) {
-  const teams = useMemo(() => Object.values(groups).flat().map((team) => team.name), [groups]);
+  const teams = useMemo(() => Object.values(groups).flat().map((team) => team.name).sort((left, right) => left.localeCompare(right)), [groups]);
   const [homeTeam, setHomeTeam] = useState(teams[0] ?? "");
   const [awayTeam, setAwayTeam] = useState(teams[1] ?? teams[0] ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("Wähle zwei Teams aus und berechne die Prognose.");
   const [result, setResult] = useState<MatchPredictionResult | null>(null);
 
+  const homeIsValid = teams.includes(homeTeam);
+  const awayIsValid = teams.includes(awayTeam);
+  const teamsDiffer = homeTeam !== awayTeam;
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!homeIsValid || !awayIsValid) {
+      setMessage("Bitte zwei gültige Teams aus der Vorschlagsliste auswählen.");
+      return;
+    }
+    if (!teamsDiffer) {
+      setMessage("Bitte zwei unterschiedliche Teams auswählen.");
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
     try {
@@ -41,32 +54,38 @@ export function PredictionForm({ groups }: PredictionFormProps) {
         <form onSubmit={handleSubmit} className="prediction-form">
           <label>
             <span>Heimteam</span>
-            <select value={homeTeam} onChange={(event) => setHomeTeam(event.target.value)}>
-              {teams.map((team) => (
-                <option key={`home-${team}`} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
+            <input
+              list="team-options"
+              value={homeTeam}
+              onChange={(event) => setHomeTeam(event.target.value)}
+              autoComplete="off"
+            />
           </label>
 
           <label>
             <span>Auswärtsteam</span>
-            <select value={awayTeam} onChange={(event) => setAwayTeam(event.target.value)}>
-              {teams.map((team) => (
-                <option key={`away-${team}`} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
+            <input
+              list="team-options"
+              value={awayTeam}
+              onChange={(event) => setAwayTeam(event.target.value)}
+              autoComplete="off"
+            />
           </label>
 
-          <button type="submit" disabled={isLoading || homeTeam === awayTeam}>
+          <datalist id="team-options">
+            {teams.map((team) => (
+              <option key={team} value={team} />
+            ))}
+          </datalist>
+
+          <button type="submit" disabled={isLoading || !homeIsValid || !awayIsValid || !teamsDiffer}>
             {isLoading ? "Berechnet..." : "Ergebnis prognostizieren"}
           </button>
         </form>
 
-        {homeTeam === awayTeam && <p>Bitte zwei unterschiedliche Teams auswählen.</p>}
+        {!homeIsValid && <p>Heimteam bitte aus der Vorschlagsliste wählen.</p>}
+        {!awayIsValid && <p>Auswärtsteam bitte aus der Vorschlagsliste wählen.</p>}
+        {homeIsValid && awayIsValid && !teamsDiffer && <p>Bitte zwei unterschiedliche Teams auswählen.</p>}
       </article>
 
       {result && (
