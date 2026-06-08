@@ -91,7 +91,7 @@ export async function refreshData(): Promise<RefreshDataResponse> {
 }
 
 export async function saveAllGroups(groups: GroupMap): Promise<{ status: string }> {
-  const response = await fetch(buildApiUrl("/api/groups/setup-all"), {
+  const response = await fetch("/api/groups/setup-all", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ groups }),
@@ -103,7 +103,7 @@ export async function saveAllGroups(groups: GroupMap): Promise<{ status: string 
 }
 
 export async function runTournamentPlayout(): Promise<TournamentPlayoutResponse> {
-  const response = await fetch(buildApiUrl("/api/simulation/playout"), {
+  const response = await fetch("/api/simulation/playout", {
     method: "POST",
     cache: "no-store",
   });
