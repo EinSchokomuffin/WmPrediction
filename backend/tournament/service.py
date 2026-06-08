@@ -46,7 +46,7 @@ class TournamentService:
         self.results: dict[str, list[dict[str, int | str]]] = {group: [] for group in GROUP_NAMES}
         self.elo = EloRating()
         self.dc = DixonColesModel()
-        self.ml_model = TrainedMatchModel.load(settings.model_artifact_path)
+        self.ml_model = None
         self.predictor = EnsemblePredictor(self.elo, self.dc, self.ml_model)
         self.last_refresh_at: datetime | None = None
         self.knockout_matches: dict[int, dict[str, object]] = {}
